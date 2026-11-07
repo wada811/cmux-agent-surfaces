@@ -93,6 +93,23 @@
          "type": "terminal"
         }
        ]
+       }
+      ]
+    },
+    {
+     "ref": "workspace:3",
+     "id": "33333333-3333-4333-8333-333333333333",
+     "index": 2,
+     "title": "gamma",
+     "panes": [
+      {
+       "ref": "pane:4",
+       "surfaces": [
+        {"ref": "surface:12", "title": "Codex by session id", "type": "terminal", "tty": "ttys012"},
+        {"ref": "surface:13", "title": "New Codex TUI", "type": "terminal", "tty": "ttys013"},
+        {"ref": "surface:14", "title": "Stopped Codex", "type": "terminal", "tty": "ttys014"},
+        {"ref": "surface:15", "title": "No Codex rollout", "type": "terminal", "tty": "ttys015"}
+       ]
       }
      ]
     }

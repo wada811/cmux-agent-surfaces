@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 )
 
@@ -37,6 +38,7 @@ type tree struct {
 					Type  *string `json:"type"`
 					Ref   *string `json:"ref"`
 					Title *string `json:"title"`
+					TTY   *string `json:"tty"`
 				} `json:"surfaces"`
 			} `json:"panes"`
 		} `json:"workspaces"`
@@ -117,7 +119,7 @@ func parseTree(data []byte) ([]*Row, callerInfo, error) {
 						rows = append(rows, &Row{
 							WindowRef: win.Ref, WorkspaceRef: ws.Ref, WorkspaceTitle: ws.Title,
 							SurfaceRef: s.Ref, SurfaceTitle: s.Title,
-							wsID: deref(ws.ID), wsIndex: idx,
+							tty: deref(s.TTY), wsID: deref(ws.ID), wsIndex: idx,
 						})
 					}
 				}
@@ -151,9 +153,9 @@ func listSurfaces() ([]*Row, callerInfo, error) {
 
 // parseRestoreRecord interprets the output of `cmux surface resume show`.
 // readable is false when the output cannot be trusted: the command failed, the
-// JSON is broken, `restore_record` is missing, or a claude record has no
-// checkpoint_id. rec is non-nil only for a usable Claude record; a null record
-// or another kind is readable and simply not Claude.
+// JSON is broken, `restore_record` is missing, or a Claude/Codex record has no
+// checkpoint_id. rec is non-nil only for a usable Claude or Codex record; a
+// null record or another kind is readable and simply not one of those agents.
 func parseRestoreRecord(out []byte, runErr error) (rec *restoreRecord, readable bool) {
 	if runErr != nil {
 		return nil, false
@@ -173,7 +175,7 @@ func parseRestoreRecord(out []byte, runErr error) (rec *restoreRecord, readable 
 	if json.Unmarshal(raw, &r) != nil {
 		return nil, false
 	}
-	if r.Kind != "claude" {
+	if !slices.Contains(validAgents, Agent(r.Kind)) {
 		return nil, true
 	}
 	if r.CheckpointID == "" {

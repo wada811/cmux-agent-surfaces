@@ -8,3 +8,7 @@ surface:6     shell     1d    -                                 4006
 surface:7     stopped   1d    -                                 -
 surface:10    idle      2d    -                                 4010
 surface:11    stopped   -     -                                 -
+surface:12    unknown   1d    -                                 5012
+surface:13    unknown   -     -                                 5014
+surface:14    stopped   2d    -                                 -
+surface:15    stopped   -     -                                 -

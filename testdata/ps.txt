@@ -1,0 +1,4 @@
+5012 5000 ttys012 node /Users/me/.npm/bin/codex --disable computer_use -c mcp_servers.cmux-cua.command="/Users/me/Library/Application Support/cmux/codex-cua" -c check_for_update_on_startup=false resume 00000000-0000-4000-8000-000000000012 --no-daemon
+5013 5012 ttys012 /Users/me/.npm/vendor/aarch64-apple-darwin/bin/codex --disable computer_use -c mcp_servers.cmux-cua.command="/Users/me/Library/Application Support/cmux/codex-cua" -c check_for_update_on_startup=false resume 00000000-0000-4000-8000-000000000012 --no-daemon
+5014 5000 ttys013 node /Users/me/.npm/bin/codex --no-daemon
+5015 5014 ttys013 /Users/me/.npm/vendor/aarch64-apple-darwin/bin/codex --no-daemon

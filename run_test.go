@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -28,6 +29,9 @@ func TestMain(m *testing.M) {
 // Code's data lives, and which pids are alive.
 type env struct {
 	claude      string          // directory under testdata holding .claude
+	ps          string          // fake `ps` output; defaults to testdata/ps.txt
+	psFails     bool            // fake `ps` fails
+	psCalls     *int            // counts fake `ps` calls
 	treeFails   bool            // `cmux tree` fails
 	treeRaw     string          // replaces the tree output when set
 	resumeFails map[string]bool // surface ref -> `resume show` fails
@@ -55,12 +59,27 @@ func mustRead(t *testing.T, path string) []byte {
 // testdata/cmux/resume_<N>.json.
 func (e env) install(t *testing.T) {
 	t.Helper()
-	oldExec, oldHome, oldDir, oldNow, oldAlive := cmuxExec, home, claudeDir, now, pidAlive
-	t.Cleanup(func() { cmuxExec, home, claudeDir, now, pidAlive = oldExec, oldHome, oldDir, oldNow, oldAlive })
+	oldExec, oldHome, oldDir, oldCodexDir, oldNow, oldAlive, oldPS := cmuxExec, home, claudeDir, codexDir, now, pidAlive, psExec
+	t.Cleanup(func() {
+		cmuxExec, home, claudeDir, codexDir, now, pidAlive, psExec = oldExec, oldHome, oldDir, oldCodexDir, oldNow, oldAlive, oldPS
+	})
 	home = "/Users/me"
 	claudeDir = filepath.Join("testdata", e.claude, ".claude")
+	codexDir = filepath.Join("testdata", e.claude, ".codex")
 	now = func() time.Time { return fixedNow }
 	pidAlive = func(pid int) bool { return !e.dead[pid] }
+	psExec = func() ([]byte, error) {
+		if e.psCalls != nil {
+			*e.psCalls = *e.psCalls + 1
+		}
+		if e.psFails {
+			return nil, errors.New("exit status 1")
+		}
+		if e.ps != "" {
+			return []byte(e.ps), nil
+		}
+		return mustRead(t, "testdata/ps.txt"), nil
+	}
 	cmuxExec = func(args ...string) ([]byte, error) {
 		if len(args) == 1 && args[0] == "--version" {
 			return []byte(e.cmuxVersion), nil
@@ -165,6 +184,7 @@ func TestRunStates(t *testing.T) {
 	want := map[string]string{
 		"surface:1": "busy", "surface:2": "waiting", "surface:3": "waiting", "surface:4": "waiting",
 		"surface:5": "idle", "surface:6": "shell", "surface:7": "stopped", "surface:10": "idle", "surface:11": "stopped",
+		"surface:12": "unknown", "surface:13": "unknown", "surface:14": "stopped", "surface:15": "stopped",
 	}
 	for ref, state := range want {
 		if !strings.Contains(r.stdout, `"surface_ref": "`+ref+`",`+"\n  "+`"state": "`+state+`"`) {
@@ -180,6 +200,73 @@ func TestRunStates(t *testing.T) {
 	if !strings.Contains(r.stdout, `"cwd": "/Users/me/work/restore-7"`) {
 		t.Errorf("stopped tab should fall back to the restore record's cwd:\n%s", r.stdout)
 	}
+	for _, ref := range []string{"surface:12", "surface:13", "surface:14", "surface:15"} {
+		if !strings.Contains(r.stdout, `"surface_ref": "`+ref+`"`) {
+			t.Errorf("missing Codex row %s:\n%s", ref, r.stdout)
+		}
+	}
+}
+
+func TestRunCodexStates(t *testing.T) {
+	r := defaultEnv().run(t, "--json", "--agent", "codex")
+	if r.code != 0 || r.stderr != "" {
+		t.Fatalf("code=%d stderr=%q", r.code, r.stderr)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal([]byte(r.stdout), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 4 {
+		t.Fatalf("got %d Codex rows, want 4", len(rows))
+	}
+	want := map[string]struct {
+		state string
+		pid   any
+		cwd   string
+		sid   string
+		path  bool
+		upd   any
+	}{
+		"surface:12": {"unknown", float64(5012), "/Users/me/work/codex-12", "00000000-0000-4000-8000-000000000012", true, float64(time.Date(2026, 10, 9, 10, 0, 0, 0, time.UTC).Unix())},
+		"surface:13": {"unknown", float64(5014), "/Users/me/work/codex-13", "00000000-0000-4000-8000-000000000013", false, nil},
+		"surface:14": {"stopped", nil, "/Users/me/work/codex-14", "00000000-0000-4000-8000-000000000014", true, float64(time.Date(2026, 10, 8, 11, 0, 0, 0, time.UTC).Unix())},
+		"surface:15": {"stopped", nil, "/Users/me/work/codex-15", "00000000-0000-4000-8000-000000000015", false, nil},
+	}
+	for _, row := range rows {
+		ref := row["surface_ref"].(string)
+		w := want[ref]
+		if row["agent"] != "codex" || row["state"] != w.state || row["pid"] != w.pid || row["cwd"] != w.cwd || row["session_id"] != w.sid || row["updated"] != w.upd {
+			t.Errorf("%s: got %#v", ref, row)
+		}
+		_, hasPath := row["transcript_path"].(string)
+		if hasPath != w.path {
+			t.Errorf("%s transcript path = %#v, want present=%v", ref, row["transcript_path"], w.path)
+		}
+	}
+}
+
+func TestRunCodexPS(t *testing.T) {
+	t.Run("failure keeps Codex state unknown", func(t *testing.T) {
+		e := defaultEnv()
+		e.psFails = true
+		r := e.run(t, "--json", "--agent", "codex", "--fields", "surface_ref,agent,state,pid")
+		if r.code != 0 || r.stderr != "cmux-claude-surfaces: warning: could not run ps; Codex tabs show state unknown\n" {
+			t.Errorf("code=%d stderr=%q", r.code, r.stderr)
+		}
+		if strings.Count(r.stdout, `"state": "unknown"`) != 4 || strings.Count(r.stdout, `"pid": null`) != 4 {
+			t.Errorf("Codex rows should be unknown with null pids:\n%s", r.stdout)
+		}
+	})
+	t.Run("no Codex records skips ps", func(t *testing.T) {
+		calls := 0
+		e := defaultEnv()
+		e.psCalls = &calls
+		e.treeRaw = `{"windows":[{"workspaces":[{"panes":[{"surfaces":[{"ref":"surface:1","type":"terminal"}]}]}]}]}`
+		r := e.run(t)
+		if r.code != 0 || calls != 0 {
+			t.Errorf("code=%d ps calls=%d", r.code, calls)
+		}
+	})
 }
 
 func TestRunWaitingFor(t *testing.T) {
@@ -225,7 +312,7 @@ func TestRunWarnings(t *testing.T) {
 	t.Run("no restore record readable", func(t *testing.T) {
 		e := defaultEnv()
 		e.resumeFails = map[string]bool{}
-		for _, n := range []int{1, 2, 3, 4, 5, 6, 7, 8, 10, 11} {
+		for _, n := range []int{1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15} {
 			e.resumeFails[fmt.Sprintf("surface:%d", n)] = true
 		}
 		r := e.run(t)
@@ -243,8 +330,8 @@ func TestRunWarnings(t *testing.T) {
 		}
 		golden(t, "stderr_bad_sessions", r.stderr)
 		// With no live session every Claude tab shows as stopped.
-		if strings.Count(r.stdout, "stopped") != 9 {
-			t.Errorf("want 9 stopped tabs:\n%s", r.stdout)
+		if strings.Count(r.stdout, "stopped") != 11 {
+			t.Errorf("want 11 stopped tabs:\n%s", r.stdout)
 		}
 	})
 }
@@ -301,13 +388,17 @@ func TestRunFilters(t *testing.T) {
 		code int
 	}{
 		{"state list", []string{"--state", "waiting,busy", "--fields", "surface_ref"}, "surface:1 surface:2 surface:3 surface:4", 0},
+		{"agent codex", []string{"--agent", "codex", "--fields", "surface_ref"}, "surface:12 surface:13 surface:14 surface:15", 0},
+		{"agent claude", []string{"--agent", "claude", "--fields", "surface_ref"}, "surface:1 surface:2 surface:3 surface:4 surface:5 surface:6 surface:7 surface:10 surface:11", 0},
+		{"unknown state", []string{"--state", "unknown", "--fields", "surface_ref"}, "surface:12 surface:13", 0},
+		{"Claude stopped older than", []string{"--state", "stopped", "--older-than", "1d", "--agent", "claude", "--fields", "surface_ref"}, "surface:7", 0},
 		{"state none", []string{"--state", "shell", "--workspace", "workspace:2", "--fields", "surface_ref"}, "", 1},
-		{"older than excludes unknown age", []string{"--older-than", "1d", "--fields", "surface_ref"}, "surface:7 surface:10", 0},
+		{"older than excludes rows with no age", []string{"--older-than", "1d", "--fields", "surface_ref"}, "surface:7 surface:10 surface:12 surface:14", 0},
 		{"workspace by uuid", []string{"--workspace", "22222222-2222-4222-8222-222222222222", "--fields", "surface_ref"}, "surface:10 surface:11", 0},
 		{"workspace by index", []string{"--workspace", "1", "--fields", "surface_ref"}, "surface:10 surface:11", 0},
 		{"unknown workspace", []string{"--workspace", "workspace:99", "--fields", "surface_ref"}, "", 1},
 		{"exclude self", []string{"--exclude-self", "--state", "busy", "--fields", "surface_ref"}, "", 1},
-		{"sort age", []string{"--sort", "age", "--fields", "surface_ref"}, "surface:1 surface:5 surface:3 surface:2 surface:4 surface:6 surface:7 surface:10 surface:11", 0},
+		{"sort age", []string{"--sort", "age", "--fields", "surface_ref"}, "surface:1 surface:5 surface:3 surface:2 surface:4 surface:6 surface:7 surface:12 surface:10 surface:14 surface:11 surface:13 surface:15", 0},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			r := defaultEnv().run(t, c.args...)

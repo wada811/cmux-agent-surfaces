@@ -172,6 +172,23 @@ func run(args []string, stdout, stderr io.Writer) int {
 		}()
 	}
 	wg.Wait()
+	var codex codexLive
+	hasCodex := false
+	for _, rec := range recs {
+		if rec != nil && rec.Kind == string(AgentCodex) {
+			hasCodex = true
+			break
+		}
+	}
+	if hasCodex {
+		out, err := psExec()
+		if err != nil {
+			codex.ok = false
+			fmt.Fprintln(stderr, "cmux-claude-surfaces: warning: could not run ps; Codex tabs show state unknown")
+		} else {
+			codex = liveCodex(parseCodexProcesses(out))
+		}
+	}
 	unreadable := 0
 	for _, b := range bad {
 		if b {
@@ -193,7 +210,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 	rows := []*Row{}
 	for i, s := range surfaces {
 		if recs[i] != nil {
-			describeClaude(s, recs[i], live)
+			if recs[i].Kind == string(AgentCodex) {
+				describeCodex(s, recs[i], codex)
+			} else {
+				describeClaude(s, recs[i], live)
+			}
 			rows = append(rows, s)
 		}
 	}

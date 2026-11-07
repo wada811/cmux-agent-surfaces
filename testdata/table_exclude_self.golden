@@ -7,3 +7,7 @@ workspace:1    alpha               surface:6     background watcher             
 workspace:1    alpha               surface:7     old experiment                    ~/work/restore-7              claude  stopped   1d
 workspace:2    beta                surface:10    beta tab                          ~/work/beta                   claude  idle      2d
 workspace:2    beta                surface:11    never started                     ~/work/restore-11             claude  stopped   -
+workspace:3    gamma               surface:12    Codex by session id               ~/work/codex-12               codex   unknown   1d
+workspace:3    gamma               surface:13    New Codex TUI                     ~/work/codex-13               codex   unknown   -
+workspace:3    gamma               surface:14    Stopped Codex                     ~/work/codex-14               codex   stopped   2d
+workspace:3    gamma               surface:15    No Codex rollout                  ~/work/codex-15               codex   stopped   -

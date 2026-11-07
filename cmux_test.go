@@ -39,8 +39,11 @@ func TestParseRestoreRecord(t *testing.T) {
 		wantReadable bool
 	}{
 		{"claude", `{"restore_record":{"kind":"claude","checkpoint_id":"abc"}}`, nil, true, true},
+		{"codex", `{"restore_record":{"kind":"codex","checkpoint_id":"abc"}}`, nil, true, true},
+		{"codex without id", `{"restore_record":{"kind":"codex","checkpoint_id":""}}`, nil, false, false},
+		{"codex missing id", `{"restore_record":{"kind":"codex"}}`, nil, false, false},
 		{"null record", `{"restore_record":null,"surface_ref":"surface:1"}`, nil, false, true},
-		{"other kind", `{"restore_record":{"kind":"codex","checkpoint_id":""}}`, nil, false, true},
+		{"other kind", `{"restore_record":{"kind":"gemini","checkpoint_id":"abc"}}`, nil, false, true},
 		{"claude without id", `{"restore_record":{"kind":"claude","checkpoint_id":""}}`, nil, false, false},
 		{"claude missing id", `{"restore_record":{"kind":"claude"}}`, nil, false, false},
 		{"key missing", `{"surface_ref":"surface:1"}`, nil, false, false},
@@ -100,6 +103,25 @@ func TestParseTreeCaller(t *testing.T) {
 		_, got, err := parseTree([]byte(c.in))
 		if err != nil || got != c.want {
 			t.Errorf("%s: got %v, %v; want %v", c.name, got, err, c.want)
+		}
+	}
+}
+
+func TestParseTreeTTY(t *testing.T) {
+	for _, c := range []struct {
+		name, tty string
+	}{
+		{"tty", `,"tty":"ttys187"`},
+		{"no tty", ""},
+	} {
+		in := `{"windows":[{"workspaces":[{"panes":[{"surfaces":[{"type":"terminal"` + c.tty + `}]}]}]}]}`
+		rows, _, err := parseTree([]byte(in))
+		want := ""
+		if c.name == "tty" {
+			want = "ttys187"
+		}
+		if err != nil || len(rows) != 1 || rows[0].tty != want {
+			t.Errorf("%s: rows=%v err=%v", c.name, rows, err)
 		}
 	}
 }
