@@ -148,6 +148,8 @@ func describeCodex(row *Row, rec *restoreRecord, live codexLive) {
 	}
 	p, ok := live.bySid[strings.ToLower(rec.CheckpointID)]
 	if !ok && row.tty != "" {
+		// Match only the tty of this open surface against this ps snapshot; a
+		// tty from a closed tab could be reused by a later process.
 		p, ok = live.byTTY[row.tty]
 	}
 	if ok {

@@ -1,21 +1,21 @@
 # cmux-claude-surfaces
 
-List the [cmux](https://www.cmux.dev/) surfaces (tabs) that run [Claude Code](https://claude.com/claude-code) and find which one needs you.
+List the [cmux](https://www.cmux.dev/) surfaces (tabs) that run [Claude Code](https://claude.com/claude-code) or Codex and find which one needs you.
 
-When you run many Claude Code sessions in cmux tabs, the tab titles do not tell you which one is waiting for your answer, which one is still working, and which one finished days ago. `cmux-claude-surfaces` lists every tab that runs (or ran) claude, across all windows and workspaces, with its state.
+When you run Claude Code and Codex sessions in cmux tabs, the tab titles do not tell you which agent is in each tab or which sessions have exited. `cmux-claude-surfaces` lists both agents across all windows and workspaces, with the agent and its state. Use `--agent` to filter; by default, it lists both.
 
 ```console
 $ cmux-claude-surfaces
-WORKSPACE_REF  WORKSPACE_TITLE     SURFACE_REF   SURFACE_TITLE                     CWD                           STATE     AGE
-workspace:1    Main                surface:1     ✳ Refactor the login flow         ~/src/app                     busy      now
-workspace:1    Main                surface:3     Fix flaky test                    ~/src/app                     waiting   12m
-workspace:2    Review              surface:7     PR #123                           ~/src/app--pr-123             stopped   2d
+WORKSPACE_REF  WORKSPACE_TITLE     SURFACE_REF   SURFACE_TITLE                     CWD                           AGENT   STATE     AGE
+workspace:1    Main                surface:1     ✳ Refactor the login flow         ~/src/app                     claude  busy      now
+workspace:1    Main                surface:3     Fix flaky test                    ~/src/app                     codex   unknown   12m
+workspace:2    Review              surface:7     PR #123                           ~/src/app--pr-123             claude  stopped   2d
 ```
 
 Use it to:
 
-- **Find sessions waiting for you**: `STATE` is `waiting` while claude is blocked on a question or a permission prompt. `--state waiting` shows only those.
-- **Clean up finished tabs**: `stopped` means claude has exited but the tab is still open; `--state stopped --older-than 14d` shows the ones that have not moved for two weeks.
+- **Find Claude sessions waiting for you**: `STATE` is `waiting` while Claude Code is blocked on a question or a permission prompt. Codex is never reported as `waiting`; its state is `unknown` while it is running. `--state waiting` shows Claude sessions only.
+- **Clean up finished tabs**: `stopped` means the agent has exited but the tab is still open; `--state stopped --older-than 14d` shows the ones with a known last message from more than two weeks ago.
 - **Get from a tab to its session**: `--json` gives the session id and the transcript path, and `workspace_ref` / `surface_ref` are what `cmux` commands take.
 
 It works well for LLM agents too: `--json` gives structured output, `--help` explains every field and state, and the exit status tells "nothing to list" (1) apart from "could not read cmux" (2), as `grep` does.
@@ -46,7 +46,7 @@ or load it from `.zshrc` after `compinit`:
 source <(cmux-claude-surfaces --completion zsh)
 ```
 
-It completes the flags and the values of `--state`, `--fields`, `--sort` and `--completion`; `--state` and `--fields` take a comma-separated list.
+It completes the flags and the values of `--agent`, `--state`, `--fields`, `--sort` and `--completion`; `--agent`, `--state` and `--fields` take a comma-separated list.
 
 ## Usage
 
@@ -61,16 +61,17 @@ Each row has the fields below. Every field is a JSON key and, in upper case, a t
 | `workspace_title` | ✓ | Title of the workspace. |
 | `surface_ref` | ✓ | cmux ref of the tab. Pass it to the `--surface` flag of cmux commands, e.g. `cmux read-screen --surface surface:7`. |
 | `surface_title` | ✓ | Title of the tab. |
+| `agent` | ✓ | `claude` or `codex`. The default list includes both. |
 | `state` | ✓ | See below. |
-| `waiting_for` | | What a `waiting` session is blocked on (see [JSON](#json)). `null` for other states and when the transcript cannot be read. The table shows one line, such as `question: <header>` or `permission: Bash go test ./...`. |
+| `waiting_for` | | What a `waiting` Claude session is blocked on (see [JSON](#json)). `null` for other states, when the transcript cannot be read, and for every Codex row. The table shows one line, such as `question: <header>` or `permission: Bash go test ./...`. |
 | `updated` | | Time of the last message. JSON: Unix seconds. Table: local time. `null` if there is no transcript. |
 | `age` | ✓ | Time since the last message. JSON: seconds. Table: `12m`, `3h`, `2d`. |
 | `cwd` | ✓ | Working directory of the session. The table shortens `$HOME` to `~`. |
-| `session_id` | | Claude Code session id (the `checkpoint_id` of the cmux restore record). |
-| `pid` | | Process id of the live session. `null` (table: `-`) when `state` is `stopped`. |
-| `transcript_path` | | Path of the session's `.jsonl` transcript. `null` if it is not found. |
+| `session_id` | | Claude Code or Codex session id (the `checkpoint_id` of the cmux restore record). |
+| `pid` | | Process id when found. For Codex this is the TUI process, usually the node wrapper. `null` (table: `-`) when the process is not found or `ps` fails. |
+| `transcript_path` | | Path of the Claude Code `.jsonl` transcript or Codex rollout `.jsonl`. `null` if it is not found. |
 
-`session_id` and `transcript_path` are named like the input that Claude Code passes to hooks.
+`session_id` and `transcript_path` identify the Claude Code or Codex session and transcript file.
 
 | `state` | Meaning |
 | --- | --- |
@@ -78,7 +79,8 @@ Each row has the fields below. Every field is a JSON key and, in upper case, a t
 | `waiting` | Blocked on a question or a permission prompt. Needs you. |
 | `idle` | Reply finished; at the prompt. |
 | `shell` | Reply finished; background shells or agents are still running. |
-| `stopped` | claude has exited; the tab is still open. |
+| `unknown` | The agent's state could not be determined. Running Codex sessions use this state; a failed `ps` check also leaves Codex state unknown. |
+| `stopped` | The agent has exited; the tab is still open. |
 
 Plain shell tabs are not listed.
 
@@ -88,11 +90,12 @@ Filters, `--sort` and `--fields` apply to the table and to `--json` alike.
 
 | Flag | Meaning |
 | --- | --- |
-| `--state LIST` | Keep only these states. Comma-separated, from `busy`, `waiting`, `idle`, `shell`, `stopped`; for example `--state waiting,idle`. |
+| `--agent LIST` | Keep only these agents. Comma-separated, from `claude` and `codex`; for example `--agent codex`. By default, both are listed. |
+| `--state LIST` | Keep only these states. Comma-separated, from `busy`, `waiting`, `idle`, `shell`, `unknown`, `stopped`; for example `--state waiting,idle`. Codex is never `waiting`. |
 | `--older-than DURATION` | Keep only tabs whose last message is older than `DURATION`: `30m`, `12h`, `14d` (a whole number of days) or any [Go duration](https://pkg.go.dev/time#ParseDuration) such as `1h30m`. Tabs with no known last message are left out. |
 | `--workspace WS` | Keep only the tabs of one workspace. Takes the same values as the `--workspace` flag of cmux commands (e.g. `workspace:3`). A value that matches nothing lists nothing and exits with 1; it is not a usage error. |
-| `--exclude-self` | Leave out the tab this command runs in, so a Claude session that lists the others does not list itself. It uses the surface cmux reports for the `CMUX_SURFACE_ID` of the process. Outside cmux, where that variable is not set, it does nothing. |
-| `--sort ORDER` | `tree` (default) is the order of the cmux sidebar. `state` puts the tabs that need you first: `waiting`, `idle`, `shell`, `busy`, `stopped`, newest message first within a state. `age` is newest message first. Ties keep the `tree` order. |
+| `--exclude-self` | Leave out the tab this command runs in, so an agent session that lists the others does not list itself. It uses the surface cmux reports for the `CMUX_SURFACE_ID` of the process. Outside cmux, where that variable is not set, it does nothing. |
+| `--sort ORDER` | `tree` (default) is the order of the cmux sidebar. `state` puts the tabs that need you first: `waiting`, `idle`, `shell`, `busy`, `unknown`, `stopped`, newest message first within a state. `age` is newest message first. Ties keep the `tree` order. |
 | `--completion SHELL` | Print the shell completion script and exit. Only `zsh` is supported; see [Shell completion](#shell-completion). |
 | `--fields LIST` | Print only these fields, in this order, comma-separated; for example `--fields surface_ref,state,age`. Works for the table and for `--json`. An unknown name is a usage error (exit 2). |
 
@@ -114,6 +117,7 @@ $ cmux-claude-surfaces --json
   "updated": 1760000000,
   "age": 5,
   "cwd": "/Users/me/src/app",
+  "agent": "claude",
   "session_id": "0b6f2c1e-5a43-4f0e-9a52-1d3c8e7b4a10",
   "pid": 12345,
   "transcript_path": "/Users/me/.claude/projects/-Users-me-src-app/0b6f2c1e-5a43-4f0e-9a52-1d3c8e7b4a10.jsonl"
@@ -129,6 +133,7 @@ $ cmux-claude-surfaces --json
   "updated": 1759830000,
   "age": 170005,
   "cwd": "/Users/me/src/app--pr-123",
+  "agent": "claude",
   "session_id": "7d2e9a40-8b1c-4c6d-b3f5-62a1c0e94d28",
   "pid": null,
   "transcript_path": "/Users/me/.claude/projects/-Users-me-src-app--pr-123/7d2e9a40-8b1c-4c6d-b3f5-62a1c0e94d28.jsonl"
@@ -153,6 +158,10 @@ $ cmux-claude-surfaces --json
 ```sh
 # Sessions waiting for your answer
 cmux-claude-surfaces --state waiting
+
+# Codex sessions (running Codex state is always unknown)
+cmux-claude-surfaces --agent codex
+cmux-claude-surfaces --agent codex --state unknown
 
 # What the waiting sessions are asking
 cmux-claude-surfaces --state waiting --fields surface_ref,waiting_for
@@ -189,22 +198,23 @@ cmux close-surface --workspace <workspace_ref> --surface <surface_ref>
 | Code | Meaning |
 | --- | --- |
 | 0 | At least one row was printed. Warnings (for example a surface whose restore record could not be read) go to stderr and do not change the exit status. |
-| 1 | Nothing to print: there is no Claude tab, or the filters left none. With `--json` it prints `[]`. |
+| 1 | Nothing to print: there is no agent tab, or the filters left none. With `--json` it prints `[]`. |
 | 2 | Error: invalid arguments, or cmux could not be read (not running, or not on `PATH`), or its output was in a format this tool does not understand. |
 
 ## How it works
 
 1. `cmux tree --all --json` lists every terminal surface.
-2. `cmux surface resume show` tells which surfaces have a Claude restore record, and its `checkpoint_id` is the Claude session id. The tty in `cmux tree` is not used: it outlives a closed tab and can be reused by another one.
-3. `~/.claude/sessions/<pid>.json` (for live processes) gives the status and cwd, and `~/.claude/projects/*/<session>.jsonl` gives the last message time.
-4. For `waiting` sessions, the last 256 KiB of the transcript gives `waiting_for`: the last `tool_use` that has no `tool_result` after it.
+2. `cmux surface resume show` identifies the agent and gives its session id in `checkpoint_id`.
+3. For Claude Code, `~/.claude/sessions/<pid>.json` gives the live status and cwd, and `~/.claude/projects/*/<session>.jsonl` gives the last message time.
+4. Codex transcript files are under `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl`, or `~/.codex/sessions/...` when `CODEX_HOME` is not set. `ps` checks whether the process command contains the session's `resume` id. If no resume-id match is found, Codex is matched by comparing its tty with the tty of the current open cmux surface. This comparison uses the current surface list and a current `ps` snapshot, so it never compares a closed tab's old tty with a later process. If `ps` fails, the command prints a warning and shows Codex state as `unknown` with a null `pid`.
+5. For Claude sessions in `waiting`, the last 256 KiB of the transcript gives `waiting_for`: the last `tool_use` that has no `tool_result` after it. Codex does not report `waiting_for`, so it is always `null` and never appears under `--state waiting`.
 
-If the output of cmux or Claude Code cannot be read any more (for example after a format change), it exits with an error instead of printing an empty table, and asks you to report it.
+If cmux output cannot be read any more (for example after a format change), it exits with an error instead of printing an empty table, and asks you to report it.
 
 ## Requirements
 
 - macOS with cmux running
-- Claude Code launched inside cmux surfaces
+- Claude Code or Codex launched inside cmux surfaces
 
 ## Release (maintainers)
 

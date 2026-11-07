@@ -21,8 +21,8 @@ const (
 	StateIdle    State = "idle"
 	StateShell   State = "shell"
 	StateStopped State = "stopped"
-	// StateUnknown is for a live session whose status is unknown (Claude did
-	// not report it as a string, or the agent is Codex).
+	// StateUnknown is for a session whose state could not be determined
+	// (Claude did not report it as a string, or Codex process data is unknown).
 	StateUnknown State = "unknown"
 )
 
