@@ -15,6 +15,7 @@ workspace:2    Review              surface:7     PR #123                        
 Use it to:
 
 - **Find Claude sessions waiting for you**: `STATE` is `waiting` while Claude Code is blocked on a question or a permission prompt. Codex is never reported as `waiting`; its state is `unknown` while it is running. `--state waiting` shows Claude sessions only.
+- **New Codex tabs appear after the first message**: cmux attaches the restore record that this tool reads once a session exists. A tab that only shows the Codex prompt is not listed yet.
 - **Clean up finished tabs**: `stopped` means the agent has exited but the tab is still open; `--state stopped --older-than 14d` shows the ones with a known last message from more than two weeks ago.
 - **Get from a tab to its session**: `--json` gives the session id and the transcript path, and `workspace_ref` / `surface_ref` are what `cmux` commands take.
 
