@@ -107,20 +107,16 @@ func TestParseTreeCaller(t *testing.T) {
 	}
 }
 
-func TestParseTreeTTY(t *testing.T) {
+func TestParseTreeSurfaceID(t *testing.T) {
 	for _, c := range []struct {
-		name, tty string
+		name, id, want string
 	}{
-		{"tty", `,"tty":"ttys187"`},
-		{"no tty", ""},
+		{"id", `,"id":"AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA"`, "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA"},
+		{"no id", "", ""},
 	} {
-		in := `{"windows":[{"workspaces":[{"panes":[{"surfaces":[{"type":"terminal"` + c.tty + `}]}]}]}]}`
+		in := `{"windows":[{"workspaces":[{"panes":[{"surfaces":[{"type":"terminal"` + c.id + `}]}]}]}]}`
 		rows, _, err := parseTree([]byte(in))
-		want := ""
-		if c.name == "tty" {
-			want = "ttys187"
-		}
-		if err != nil || len(rows) != 1 || rows[0].tty != want {
+		if err != nil || len(rows) != 1 || rows[0].surfaceID != c.want {
 			t.Errorf("%s: rows=%v err=%v", c.name, rows, err)
 		}
 	}

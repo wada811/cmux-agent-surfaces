@@ -37,8 +37,8 @@ type tree struct {
 				Surfaces []struct {
 					Type  *string `json:"type"`
 					Ref   *string `json:"ref"`
+					ID    *string `json:"id"`
 					Title *string `json:"title"`
-					TTY   *string `json:"tty"`
 				} `json:"surfaces"`
 			} `json:"panes"`
 		} `json:"workspaces"`
@@ -119,7 +119,7 @@ func parseTree(data []byte) ([]*Row, callerInfo, error) {
 						rows = append(rows, &Row{
 							WindowRef: win.Ref, WorkspaceRef: ws.Ref, WorkspaceTitle: ws.Title,
 							SurfaceRef: s.Ref, SurfaceTitle: s.Title,
-							tty: deref(s.TTY), wsID: deref(ws.ID), wsIndex: idx,
+							surfaceID: deref(s.ID), wsID: deref(ws.ID), wsIndex: idx,
 						})
 					}
 				}
@@ -144,7 +144,7 @@ func selfSurface(envSurfaceID string, caller callerInfo) string {
 }
 
 func listSurfaces() ([]*Row, callerInfo, error) {
-	out, err := cmuxOutput("tree", "--all")
+	out, err := cmuxOutput("tree", "--all", "--id-format", "both")
 	if err != nil {
 		return nil, callerInfo{}, errors.New("cmux-agent-surfaces: could not read `cmux tree` (is cmux running?)")
 	}

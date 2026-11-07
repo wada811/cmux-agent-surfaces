@@ -42,7 +42,7 @@ type Row struct {
 	SessionID      string
 	Pid            *int // nil when claude is not running
 	TranscriptPath *string
-	tty            string // tty from cmux tree; used to match live Codex tabs
+	surfaceID      string // surface UUID from `cmux tree`; binds a Codex process to its tab
 
 	wsID    string // workspace UUID from `cmux tree`
 	wsIndex int    // workspace index in its window, -1 when unknown

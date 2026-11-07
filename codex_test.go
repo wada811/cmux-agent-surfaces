@@ -85,18 +85,25 @@ func TestIsCodexTUI(t *testing.T) {
 	}
 }
 
+func TestParseCodexSurfaceIDs(t *testing.T) {
+	out := []byte("10 node /a/codex HOME=/x CMUX_SURFACE_ID=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa FOO=1\n" +
+		"11 /a/vendor/codex CMUX_SURFACE_ID=BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB\n" +
+		"12 /a/codex no surface id here\n")
+	got := parseCodexSurfaceIDs(out)
+	if len(got) != 2 || got[10] != "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA" || got[11] != "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB" {
+		t.Errorf("got %v", got)
+	}
+}
+
 func TestLiveCodex(t *testing.T) {
 	procs := []codexProc{
 		{pid: 10, ppid: 1, tty: "ttys012", sid: "ABC"},
-		{pid: 11, ppid: 10, tty: "ttys012", sid: "ABC"},
+		{pid: 11, ppid: 10, tty: "ttys012", sid: "ABC", surfaceID: "S1"},
 		{pid: 20, ppid: 1, tty: "??", sid: ""},
 	}
 	got := liveCodex(procs)
-	if !got.ok || got.bySid["abc"].pid != 10 || got.byTTY["ttys012"].pid != 10 {
+	if !got.ok || got.bySid["abc"].pid != 10 || got.bySurface["S1"].pid != 10 {
 		t.Errorf("wrong representatives: %+v", got)
-	}
-	if _, ok := got.byTTY["??"]; ok {
-		t.Error("unknown tty was indexed")
 	}
 	if _, ok := got.bySid[""]; ok {
 		t.Error("empty session id was indexed")

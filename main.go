@@ -186,7 +186,13 @@ func run(args []string, stdout, stderr io.Writer) int {
 			codex.ok = false
 			fmt.Fprintln(stderr, "cmux-agent-surfaces: warning: could not run ps; Codex tabs show state unknown")
 		} else {
-			codex = liveCodex(parseCodexProcesses(out))
+			procs := parseCodexProcesses(out)
+			if readCodexSurfaceIDs(procs) {
+				codex = liveCodex(procs)
+			} else {
+				codex.ok = false
+				fmt.Fprintln(stderr, "cmux-agent-surfaces: warning: could not read the environment of Codex processes; Codex tabs show state unknown")
+			}
 		}
 	}
 	unreadable := 0

@@ -121,8 +121,8 @@ Exit status (like grep):
 Warnings (e.g. a tab whose restore record could not be read) go to stderr and
 do not change the exit status.
 
-Claude and Codex tabs are identified by cmux's restore record. Codex liveness
-uses the resume id from ps, or the tty shared by the current open surface and
-current Codex process when no resume-id match is found. This tty comparison
-uses a current snapshot, so it never compares a closed tab's old tty with a
-later process.`
+Claude and Codex tabs are identified by cmux's restore record. A Codex process
+is bound to its tab by the CMUX_SURFACE_ID in its environment (read with ps eww),
+falling back to the resume id in its command line. The tty in cmux tree is not
+used, because it can be stale and point at another tab. If the environment
+cannot be read, Codex state is unknown.`

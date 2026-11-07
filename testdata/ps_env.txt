@@ -1,0 +1,4 @@
+5012 node /Users/me/.npm/bin/codex resume 00000000-0000-4000-8000-000000000012 --no-daemon HOME=/Users/me CMUX_SURFACE_ID=CCCCCCCC-0000-4000-8000-000000000012
+5013 /Users/me/.npm/vendor/aarch64-apple-darwin/bin/codex resume 00000000-0000-4000-8000-000000000012 --no-daemon CMUX_SURFACE_ID=CCCCCCCC-0000-4000-8000-000000000012
+5014 node /Users/me/.npm/bin/codex --no-daemon HOME=/Users/me CMUX_SURFACE_ID=CCCCCCCC-0000-4000-8000-000000000013
+5015 /Users/me/.npm/vendor/aarch64-apple-darwin/bin/codex --no-daemon CMUX_SURFACE_ID=CCCCCCCC-0000-4000-8000-000000000013

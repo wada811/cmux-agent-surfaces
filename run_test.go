@@ -31,6 +31,8 @@ type env struct {
 	claude      string          // directory under testdata holding .claude
 	ps          string          // fake `ps` output; defaults to testdata/ps.txt
 	psFails     bool            // fake `ps` fails
+	psEnv       string          // fake `ps eww` output; defaults to testdata/ps_env.txt
+	psEnvFails  bool            // fake `ps eww` fails with no output
 	psCalls     *int            // counts fake `ps` calls
 	treeFails   bool            // `cmux tree` fails
 	treeRaw     string          // replaces the tree output when set
@@ -59,9 +61,9 @@ func mustRead(t *testing.T, path string) []byte {
 // testdata/cmux/resume_<N>.json.
 func (e env) install(t *testing.T) {
 	t.Helper()
-	oldExec, oldHome, oldDir, oldCodexDir, oldNow, oldAlive, oldPS := cmuxExec, home, claudeDir, codexDir, now, pidAlive, psExec
+	oldExec, oldHome, oldDir, oldCodexDir, oldNow, oldAlive, oldPS, oldEnv := cmuxExec, home, claudeDir, codexDir, now, pidAlive, psExec, psEnvExec
 	t.Cleanup(func() {
-		cmuxExec, home, claudeDir, codexDir, now, pidAlive, psExec = oldExec, oldHome, oldDir, oldCodexDir, oldNow, oldAlive, oldPS
+		cmuxExec, home, claudeDir, codexDir, now, pidAlive, psExec, psEnvExec = oldExec, oldHome, oldDir, oldCodexDir, oldNow, oldAlive, oldPS, oldEnv
 	})
 	home = "/Users/me"
 	claudeDir = filepath.Join("testdata", e.claude, ".claude")
@@ -79,6 +81,15 @@ func (e env) install(t *testing.T) {
 			return []byte(e.ps), nil
 		}
 		return mustRead(t, "testdata/ps.txt"), nil
+	}
+	psEnvExec = func(pids []int) ([]byte, error) {
+		if e.psEnvFails {
+			return nil, errors.New("exit status 1")
+		}
+		if e.psEnv != "" {
+			return []byte(e.psEnv), nil
+		}
+		return mustRead(t, "testdata/ps_env.txt"), nil
 	}
 	cmuxExec = func(args ...string) ([]byte, error) {
 		if len(args) == 1 && args[0] == "--version" {
@@ -245,6 +256,39 @@ func TestRunCodexStates(t *testing.T) {
 	}
 }
 
+func TestRunCodexStaleTTY(t *testing.T) {
+	const idA, idB = "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA", "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB"
+	e := defaultEnv()
+	e.surfaceID = "other"
+	// Tab A's tty in `cmux tree` is stale and names tab B's terminal.
+	e.treeRaw = `{"windows":[{"workspaces":[{"panes":[{"surfaces":[` +
+		`{"ref":"surface:12","id":"` + idA + `","title":"A","type":"terminal","tty":"ttys013"},` +
+		`{"ref":"surface:13","id":"` + idB + `","title":"B","type":"terminal","tty":"ttys012"}]}]}]}]}`
+	e.resumeRaw = map[string]string{
+		"surface:12": `{"restore_record":{"kind":"codex","checkpoint_id":"00000000-0000-4000-8000-0000000000A1"}}`,
+		"surface:13": `{"restore_record":{"kind":"codex","checkpoint_id":"00000000-0000-4000-8000-0000000000B1"}}`,
+	}
+	e.ps = "5014 5000 ttys013 node /Users/me/.npm/bin/codex --no-daemon\n" +
+		"5015 5014 ttys013 /Users/me/.npm/vendor/bin/codex --no-daemon\n"
+	e.psEnv = "5014 node /Users/me/.npm/bin/codex --no-daemon CMUX_SURFACE_ID=" + idB + " HOME=/Users/me\n" +
+		"5015 /Users/me/.npm/vendor/bin/codex --no-daemon CMUX_SURFACE_ID=" + idB + "\n"
+	r := e.run(t, "--json", "--agent", "codex", "--fields", "surface_ref,state,pid")
+	if r.code != 0 || r.stderr != "" {
+		t.Fatalf("code=%d stderr=%q", r.code, r.stderr)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal([]byte(r.stdout), &rows); err != nil {
+		t.Fatal(err)
+	}
+	got := map[string][2]any{}
+	for _, row := range rows {
+		got[row["surface_ref"].(string)] = [2]any{row["state"], row["pid"]}
+	}
+	if got["surface:12"] != [2]any{"stopped", nil} || got["surface:13"] != [2]any{"unknown", float64(5014)} {
+		t.Fatalf("stale tty bound Codex to the wrong tab: %v", got)
+	}
+}
+
 func TestRunCodexPS(t *testing.T) {
 	t.Run("session id matches without a tty", func(t *testing.T) {
 		e := defaultEnv()
@@ -254,6 +298,7 @@ func TestRunCodexPS(t *testing.T) {
 			"surface:12": `{"restore_record":{"kind":"codex","checkpoint_id":"00000000-0000-4000-8000-0000000000AB","launch_command":{"working_directory":"/Users/me/work/codex-12"}}}`,
 		}
 		e.ps = "5012 1 ?? /Users/me/.npm/bin/codex resume 00000000-0000-4000-8000-0000000000ab --no-daemon\n"
+		e.psEnv = "5012 /Users/me/.npm/bin/codex resume 00000000-0000-4000-8000-0000000000ab --no-daemon HOME=/Users/me\n"
 		r := e.run(t, "--json", "--agent", "codex", "--fields", "surface_ref,state,pid")
 		if r.code != 0 || r.stderr != "" {
 			t.Fatalf("code=%d stderr=%q", r.code, r.stderr)
@@ -272,6 +317,17 @@ func TestRunCodexPS(t *testing.T) {
 		e.psFails = true
 		r := e.run(t, "--json", "--agent", "codex", "--fields", "surface_ref,agent,state,pid")
 		if r.code != 0 || r.stderr != "cmux-agent-surfaces: warning: could not run ps; Codex tabs show state unknown\n" {
+			t.Errorf("code=%d stderr=%q", r.code, r.stderr)
+		}
+		if strings.Count(r.stdout, `"state": "unknown"`) != 4 || strings.Count(r.stdout, `"pid": null`) != 4 {
+			t.Errorf("Codex rows should be unknown with null pids:\n%s", r.stdout)
+		}
+	})
+	t.Run("unreadable environment keeps Codex state unknown", func(t *testing.T) {
+		e := defaultEnv()
+		e.psEnvFails = true
+		r := e.run(t, "--json", "--agent", "codex", "--fields", "surface_ref,agent,state,pid")
+		if r.code != 0 || r.stderr != "cmux-agent-surfaces: warning: could not read the environment of Codex processes; Codex tabs show state unknown\n" {
 			t.Errorf("code=%d stderr=%q", r.code, r.stderr)
 		}
 		if strings.Count(r.stdout, `"state": "unknown"`) != 4 || strings.Count(r.stdout, `"pid": null`) != 4 {
