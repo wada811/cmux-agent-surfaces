@@ -1,10 +1,10 @@
 package main
 
-const usageLine = "usage: cmux-claude-surfaces [--agent LIST] [--state LIST] [--older-than DURATION] [--workspace WS] [--exclude-self] [--sort tree|state|age] [--fields LIST] [--json] [--completion SHELL] [--version]"
+const usageLine = "usage: cmux-agent-surfaces [--agent LIST] [--state LIST] [--older-than DURATION] [--workspace WS] [--exclude-self] [--sort tree|state|age] [--fields LIST] [--json] [--completion SHELL] [--version]"
 
 // helpText is written for both people and LLM agents: what the tool is for,
 // what each value means and what to do next.
-const helpText = `cmux-claude-surfaces - list the cmux surfaces (tabs) that run Claude Code or Codex.
+const helpText = `cmux-agent-surfaces - list the cmux surfaces (tabs) that run Claude Code or Codex.
 
 When Claude Code and Codex sessions run in cmux tabs, this lists their tabs
 across all windows and workspaces, with the agent and its state. By default,
@@ -91,17 +91,17 @@ read.
   {"kind": "unknown"}    waiting, but no open question or tool call was found
 
 Examples:
-  cmux-claude-surfaces
-  cmux-claude-surfaces --agent claude --state waiting
-  cmux-claude-surfaces --agent codex
-  cmux-claude-surfaces --state stopped --older-than 14d
-  cmux-claude-surfaces --sort state
-  cmux-claude-surfaces --exclude-self --sort state
-  cmux-claude-surfaces --fields surface_ref,surface_title,state,age
-  cmux-claude-surfaces --state waiting --fields surface_ref,waiting_for
-  cmux-claude-surfaces --workspace workspace:3 --state waiting
-  cmux-claude-surfaces --state waiting --json --fields surface_ref,waiting_for
-  cmux-claude-surfaces --state waiting --json | jq -r '.[].transcript_path'
+  cmux-agent-surfaces
+  cmux-agent-surfaces --agent claude --state waiting
+  cmux-agent-surfaces --agent codex
+  cmux-agent-surfaces --state stopped --older-than 14d
+  cmux-agent-surfaces --sort state
+  cmux-agent-surfaces --exclude-self --sort state
+  cmux-agent-surfaces --fields surface_ref,surface_title,state,age
+  cmux-agent-surfaces --state waiting --fields surface_ref,waiting_for
+  cmux-agent-surfaces --workspace workspace:3 --state waiting
+  cmux-agent-surfaces --state waiting --json --fields surface_ref,waiting_for
+  cmux-agent-surfaces --state waiting --json | jq -r '.[].transcript_path'
   cmux read-screen --surface surface:9   # look at a listed tab
   cmux close-surface --workspace <workspace_ref> --surface <surface_ref>
                                          # close one; take both refs from one row
@@ -109,8 +109,8 @@ Examples:
 Shell completion (zsh):
   Homebrew installs it. Otherwise put the script on your fpath, then run
   compinit, or load it in .zshrc:
-    cmux-claude-surfaces --completion zsh > ~/.zfunc/_cmux-claude-surfaces
-    source <(cmux-claude-surfaces --completion zsh)
+    cmux-agent-surfaces --completion zsh > ~/.zfunc/_cmux-agent-surfaces
+    source <(cmux-agent-surfaces --completion zsh)
   It completes the flags and the values of --agent, --state, --fields, --sort
   and --completion. --agent, --state and --fields take comma-separated lists.
 

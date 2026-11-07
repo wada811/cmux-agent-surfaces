@@ -1,4 +1,4 @@
-// Command cmux-claude-surfaces lists cmux surfaces that run (or ran) Claude Code.
+// Command cmux-agent-surfaces lists cmux surfaces that run (or ran) Claude Code or Codex.
 package main
 
 import (
@@ -55,7 +55,7 @@ type options struct {
 // shell completion shows; the help text has the full explanation.
 func newFlagSet() (*flag.FlagSet, *options) {
 	o := &options{}
-	fs := flag.NewFlagSet("cmux-claude-surfaces", flag.ContinueOnError)
+	fs := flag.NewFlagSet("cmux-agent-surfaces", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.BoolVar(&o.json, "json", false, "print the list as JSON")
 	fs.BoolVar(&o.version, "version", false, "print the version and exit")
@@ -93,7 +93,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	set := map[string]bool{}
 	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
 	if o.version {
-		fmt.Fprintf(stdout, "cmux-claude-surfaces %s\n", versionString())
+		fmt.Fprintf(stdout, "cmux-agent-surfaces %s\n", versionString())
 		return 0
 	}
 	if set["completion"] {
@@ -184,7 +184,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		out, err := psExec()
 		if err != nil {
 			codex.ok = false
-			fmt.Fprintln(stderr, "cmux-claude-surfaces: warning: could not run ps; Codex tabs show state unknown")
+			fmt.Fprintln(stderr, "cmux-agent-surfaces: warning: could not run ps; Codex tabs show state unknown")
 		} else {
 			codex = liveCodex(parseCodexProcesses(out))
 		}
@@ -201,11 +201,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 			"could not read the restore record of any of the %d terminal surface(s) from `cmux surface resume show`",
 			len(surfaces))})
 	case recordsWarn:
-		fmt.Fprintf(stderr, "cmux-claude-surfaces: warning: could not read the restore record of %d surface(s)\n", unreadable)
+		fmt.Fprintf(stderr, "cmux-agent-surfaces: warning: could not read the restore record of %d surface(s)\n", unreadable)
 	}
 	live, total, readable := liveSessions()
 	if sessionsUnreadable(total, readable) {
-		fmt.Fprintf(stderr, "cmux-claude-surfaces: warning: could not read pid and sessionId from any of the %d file(s) in ~/.claude/sessions; STATE may be wrong (the Claude Code file format may have changed)\n", total)
+		fmt.Fprintf(stderr, "cmux-agent-surfaces: warning: could not read pid and sessionId from any of the %d file(s) in ~/.claude/sessions; STATE may be wrong (the Claude Code file format may have changed)\n", total)
 	}
 	rows := []*Row{}
 	for i, s := range surfaces {
@@ -231,7 +231,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 }
 
 func usageError(stderr io.Writer, msg string) int {
-	fmt.Fprintf(stderr, "cmux-claude-surfaces: %s\n%s\nRun 'cmux-claude-surfaces --help' for details.\n", msg, usageLine)
+	fmt.Fprintf(stderr, "cmux-agent-surfaces: %s\n%s\nRun 'cmux-agent-surfaces --help' for details.\n", msg, usageLine)
 	return 2
 }
 

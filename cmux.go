@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-const issuesURL = "https://github.com/wada811/cmux-claude-surfaces/issues"
+const issuesURL = "https://github.com/wada811/cmux-agent-surfaces/issues"
 
 // cmuxExec runs cmux with the given arguments and returns its stdout. Tests
 // replace it.
@@ -75,7 +75,7 @@ func formatError(what, cmuxVer string) string {
 	if cmuxVer != "" {
 		detail = "cmux " + cmuxVer + " ; " + detail
 	}
-	return fmt.Sprintf("cmux-claude-surfaces: %s (%s)\nPlease report it at %s", what, detail, issuesURL)
+	return fmt.Sprintf("cmux-agent-surfaces: %s (%s)\nPlease report it at %s", what, detail, issuesURL)
 }
 
 // formatErr is an error whose message should get the cmux version and the
@@ -146,7 +146,7 @@ func selfSurface(envSurfaceID string, caller callerInfo) string {
 func listSurfaces() ([]*Row, callerInfo, error) {
 	out, err := cmuxOutput("tree", "--all")
 	if err != nil {
-		return nil, callerInfo{}, errors.New("cmux-claude-surfaces: could not read `cmux tree` (is cmux running?)")
+		return nil, callerInfo{}, errors.New("cmux-agent-surfaces: could not read `cmux tree` (is cmux running?)")
 	}
 	return parseTree(out)
 }

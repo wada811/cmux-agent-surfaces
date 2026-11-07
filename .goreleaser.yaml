@@ -1,17 +1,17 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
-project_name: cmux-claude-surfaces
+project_name: cmux-agent-surfaces
 
 before:
   hooks:
     # Generated into completions/ (ignored by git) for the archive and the cask.
     - mkdir -p completions
-    - sh -c 'go run . --completion zsh > completions/_cmux-claude-surfaces'
+    - sh -c 'go run . --completion zsh > completions/_cmux-agent-surfaces'
 
 builds:
   - main: .
-    binary: cmux-claude-surfaces
+    binary: cmux-agent-surfaces
     env:
       - CGO_ENABLED=0
     goos:
@@ -28,7 +28,7 @@ archives:
     files:
       - LICENSE
       - README.md
-      - completions/_cmux-claude-surfaces
+      - completions/_cmux-agent-surfaces
 
 checksum:
   name_template: checksums.txt
@@ -42,9 +42,9 @@ changelog:
 
 # Homebrew: `brews` is deprecated in favor of `homebrew_casks` (since v2.10).
 homebrew_casks:
-  - name: cmux-claude-surfaces
-    homepage: https://github.com/wada811/cmux-claude-surfaces
-    description: List the cmux surfaces that run Claude Code and find which one needs you
+  - name: cmux-agent-surfaces
+    homepage: https://github.com/wada811/cmux-agent-surfaces
+    description: List the cmux surfaces that run Claude Code or Codex
     license: MIT
     repository:
       owner: wada811
@@ -52,12 +52,12 @@ homebrew_casks:
       token: "{{ .Env.GITHUB_TOKEN }}"
     directory: Casks
     completions:
-      zsh: completions/_cmux-claude-surfaces
+      zsh: completions/_cmux-agent-surfaces
     # The binary is not signed or notarized; drop the quarantine attribute.
     # Homebrew deprecated `postflight` (what `hooks` generates) for `postflight_steps`.
     custom_block: |
       postflight_steps do
         run "/usr/bin/xattr",
-            args:           ["-dr", "com.apple.quarantine", "{{ "{{" }}staged_path{{ "}}" }}/cmux-claude-surfaces"],
-            writable_paths: ["cmux-claude-surfaces"]
+            args:           ["-dr", "com.apple.quarantine", "{{ "{{" }}staged_path{{ "}}" }}/cmux-agent-surfaces"],
+            writable_paths: ["cmux-agent-surfaces"]
       end

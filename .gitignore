@@ -1,3 +1,5 @@
 tmpbin/
 dist/
 completions/
+/cmux-claude-surface[s]
+/cmux-agent-surfaces

@@ -250,7 +250,7 @@ func TestRunCodexPS(t *testing.T) {
 		e := defaultEnv()
 		e.psFails = true
 		r := e.run(t, "--json", "--agent", "codex", "--fields", "surface_ref,agent,state,pid")
-		if r.code != 0 || r.stderr != "cmux-claude-surfaces: warning: could not run ps; Codex tabs show state unknown\n" {
+		if r.code != 0 || r.stderr != "cmux-agent-surfaces: warning: could not run ps; Codex tabs show state unknown\n" {
 			t.Errorf("code=%d stderr=%q", r.code, r.stderr)
 		}
 		if strings.Count(r.stdout, `"state": "unknown"`) != 4 || strings.Count(r.stdout, `"pid": null`) != 4 {
@@ -290,7 +290,7 @@ func TestRunWarnings(t *testing.T) {
 		if r.code != 0 {
 			t.Errorf("code = %d, want 0", r.code)
 		}
-		if want := "cmux-claude-surfaces: warning: could not read the restore record of 1 surface(s)\n"; r.stderr != want {
+		if want := "cmux-agent-surfaces: warning: could not read the restore record of 1 surface(s)\n"; r.stderr != want {
 			t.Errorf("stderr = %q", r.stderr)
 		}
 		if strings.Contains(r.stdout, "surface:11") || !strings.Contains(r.stdout, "surface:10") {
@@ -341,7 +341,7 @@ func TestRunCmuxFailures(t *testing.T) {
 		e := defaultEnv()
 		e.treeFails = true
 		r := e.run(t)
-		if r.code != 2 || r.stderr != "cmux-claude-surfaces: could not read `cmux tree` (is cmux running?)\n" {
+		if r.code != 2 || r.stderr != "cmux-agent-surfaces: could not read `cmux tree` (is cmux running?)\n" {
 			t.Errorf("code %d, stderr %q", r.code, r.stderr)
 		}
 	})
@@ -426,7 +426,7 @@ func TestRunFilters(t *testing.T) {
 func TestRunFieldsAndSortErrors(t *testing.T) {
 	for _, args := range [][]string{{"--fields", "nope"}, {"--sort", "nope"}, {"--state", "nope"}, {"--older-than", "x"}} {
 		r := defaultEnv().run(t, args...)
-		if r.code != 2 || r.stdout != "" || !strings.Contains(r.stderr, "Run 'cmux-claude-surfaces --help'") {
+		if r.code != 2 || r.stdout != "" || !strings.Contains(r.stderr, "Run 'cmux-agent-surfaces --help'") {
 			t.Errorf("%v: code %d, stderr %q", args, r.code, r.stderr)
 		}
 	}

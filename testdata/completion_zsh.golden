@@ -1,6 +1,6 @@
-#compdef cmux-claude-surfaces
+#compdef cmux-agent-surfaces
 
-_cmux-claude-surfaces() {
+_cmux-agent-surfaces() {
   _arguments -S \
     '--agent=[keep only these agents (comma-separated)]:agent:{_values -s , agent claude codex}' \
     '--completion=[print the completion script for this shell (zsh)]:shell:(zsh)' \
@@ -15,8 +15,8 @@ _cmux-claude-surfaces() {
     '(- *)'{-h,--help}'[print the help]'
 }
 
-if [ "$funcstack[1]" = "_cmux-claude-surfaces" ]; then
-  _cmux-claude-surfaces "$@"
+if [ "$funcstack[1]" = "_cmux-agent-surfaces" ]; then
+  _cmux-agent-surfaces "$@"
 else
-  compdef _cmux-claude-surfaces cmux-claude-surfaces
+  compdef _cmux-agent-surfaces cmux-agent-surfaces
 fi

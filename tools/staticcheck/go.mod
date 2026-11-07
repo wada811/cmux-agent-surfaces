@@ -1,4 +1,4 @@
-module github.com/wada811/cmux-claude-surfaces/tools/staticcheck
+module github.com/wada811/cmux-agent-surfaces/tools/staticcheck
 
 go 1.27
 

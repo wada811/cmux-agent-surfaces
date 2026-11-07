@@ -1,11 +1,11 @@
-# cmux-claude-surfaces
+# cmux-agent-surfaces
 
 List the [cmux](https://www.cmux.dev/) surfaces (tabs) that run [Claude Code](https://claude.com/claude-code) or Codex and find which one needs you.
 
-When you run Claude Code and Codex sessions in cmux tabs, the tab titles do not tell you which agent is in each tab or which sessions have exited. `cmux-claude-surfaces` lists both agents across all windows and workspaces, with the agent and its state. Use `--agent` to filter; by default, it lists both.
+When you run Claude Code and Codex sessions in cmux tabs, the tab titles do not tell you which agent is in each tab or which sessions have exited. `cmux-agent-surfaces` lists both agents across all windows and workspaces, with the agent and its state. Use `--agent` to filter; by default, it lists both.
 
 ```console
-$ cmux-claude-surfaces
+$ cmux-agent-surfaces
 WORKSPACE_REF  WORKSPACE_TITLE     SURFACE_REF   SURFACE_TITLE                     CWD                           AGENT   STATE     AGE
 workspace:1    Main                surface:1     ✳ Refactor the login flow         ~/src/app                     claude  busy      now
 workspace:1    Main                surface:3     Fix flaky test                    ~/src/app                     codex   unknown   12m
@@ -23,27 +23,31 @@ It works well for LLM agents too: `--json` gives structured output, `--help` exp
 ## Install
 
 ```sh
-brew install wada811/tap/cmux-claude-surfaces
+brew install wada811/tap/cmux-agent-surfaces
 ```
 
 Or with Go:
 
 ```sh
-go install github.com/wada811/cmux-claude-surfaces@latest
+go install github.com/wada811/cmux-agent-surfaces@latest
 ```
+
+### Upgrade from `cmux-claude-surfaces`
+
+This project was renamed from `cmux-claude-surfaces` to `cmux-agent-surfaces`. Reinstall it with Homebrew using the new name. The old `go install` path no longer works because the module path changed.
 
 ### Shell completion
 
 For zsh, the Homebrew cask installs the completion script. Without Homebrew, generate it into a directory on your `fpath` (before `compinit`):
 
 ```sh
-cmux-claude-surfaces --completion zsh > ~/.zfunc/_cmux-claude-surfaces
+cmux-agent-surfaces --completion zsh > ~/.zfunc/_cmux-agent-surfaces
 ```
 
 or load it from `.zshrc` after `compinit`:
 
 ```sh
-source <(cmux-claude-surfaces --completion zsh)
+source <(cmux-agent-surfaces --completion zsh)
 ```
 
 It completes the flags and the values of `--agent`, `--state`, `--fields`, `--sort` and `--completion`; `--agent`, `--state` and `--fields` take a comma-separated list.
@@ -104,7 +108,7 @@ Filters, `--sort` and `--fields` apply to the table and to `--json` alike.
 `--json` prints the same list as JSON, with every field unless `--fields` is given.
 
 ```console
-$ cmux-claude-surfaces --json
+$ cmux-agent-surfaces --json
 [
  {
   "window_ref": "window:1",
@@ -157,41 +161,41 @@ $ cmux-claude-surfaces --json
 
 ```sh
 # Sessions waiting for your answer
-cmux-claude-surfaces --state waiting
+cmux-agent-surfaces --state waiting
 
 # Codex sessions (running Codex state is always unknown)
-cmux-claude-surfaces --agent codex
-cmux-claude-surfaces --agent codex --state unknown
+cmux-agent-surfaces --agent codex
+cmux-agent-surfaces --agent codex --state unknown
 
 # What the waiting sessions are asking
-cmux-claude-surfaces --state waiting --fields surface_ref,waiting_for
-cmux-claude-surfaces --state waiting --json --fields surface_ref,waiting_for
+cmux-agent-surfaces --state waiting --fields surface_ref,waiting_for
+cmux-agent-surfaces --state waiting --json --fields surface_ref,waiting_for
 
 # Tabs that finished and have not moved for 14 days (candidates to close)
-cmux-claude-surfaces --state stopped --older-than 14d
+cmux-agent-surfaces --state stopped --older-than 14d
 
 # Everything, with the tabs that need you first
-cmux-claude-surfaces --sort state
+cmux-agent-surfaces --sort state
 
 # The other tabs, as seen from a session that runs inside cmux
-cmux-claude-surfaces --exclude-self --sort state
+cmux-agent-surfaces --exclude-self --sort state
 
 # A narrow table: leave out the workspace and the working directory
-cmux-claude-surfaces --fields surface_ref,surface_title,state,age
+cmux-agent-surfaces --fields surface_ref,surface_title,state,age
 
 # Only one workspace
-cmux-claude-surfaces --workspace workspace:3 --state waiting
+cmux-agent-surfaces --workspace workspace:3 --state waiting
 
 # Look at a listed tab, or read its transcript
 cmux read-screen --surface surface:3
-cmux-claude-surfaces --json | jq -r '.[] | select(.surface_ref == "surface:3") | .transcript_path' | xargs tail -n 5
+cmux-agent-surfaces --json | jq -r '.[] | select(.surface_ref == "surface:3") | .transcript_path' | xargs tail -n 5
 
 # Close a listed tab (this tool only lists; closing is cmux's job).
 # Take both refs from the same row: an unknown surface ref makes cmux close the current tab.
 cmux close-surface --workspace <workspace_ref> --surface <surface_ref>
 ```
 
-`cmux-claude-surfaces --help` prints all of this in short form.
+`cmux-agent-surfaces --help` prints all of this in short form.
 
 ## Exit status
 

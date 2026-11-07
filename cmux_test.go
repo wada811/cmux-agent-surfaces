@@ -78,10 +78,10 @@ func TestJudgeRecords(t *testing.T) {
 }
 
 func TestFormatError(t *testing.T) {
-	const tail = "\nPlease report it at https://github.com/wada811/cmux-claude-surfaces/issues"
+	const tail = "\nPlease report it at https://github.com/wada811/cmux-agent-surfaces/issues"
 	for _, c := range []struct{ ver, want string }{
-		{"0.64.22 (102) [abc]", "cmux-claude-surfaces: x (cmux 0.64.22 (102) [abc] ; the output format may have changed)" + tail},
-		{"", "cmux-claude-surfaces: x (the output format may have changed)" + tail},
+		{"0.64.22 (102) [abc]", "cmux-agent-surfaces: x (cmux 0.64.22 (102) [abc] ; the output format may have changed)" + tail},
+		{"", "cmux-agent-surfaces: x (the output format may have changed)" + tail},
 	} {
 		if got := formatError("x", c.ver); got != c.want {
 			t.Errorf("formatError(%q) = %q, want %q", c.ver, got, c.want)
