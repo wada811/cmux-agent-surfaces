@@ -246,6 +246,27 @@ func TestRunCodexStates(t *testing.T) {
 }
 
 func TestRunCodexPS(t *testing.T) {
+	t.Run("session id matches without a tty", func(t *testing.T) {
+		e := defaultEnv()
+		e.surfaceID = "other"
+		e.treeRaw = `{"windows":[{"workspaces":[{"panes":[{"surfaces":[{"ref":"surface:12","title":"Codex by session id","type":"terminal","tty":"ttys012"}]}]}]}]}`
+		e.resumeRaw = map[string]string{
+			"surface:12": `{"restore_record":{"kind":"codex","checkpoint_id":"00000000-0000-4000-8000-0000000000AB","launch_command":{"working_directory":"/Users/me/work/codex-12"}}}`,
+		}
+		e.ps = "5012 1 ?? /Users/me/.npm/bin/codex resume 00000000-0000-4000-8000-0000000000ab --no-daemon\n"
+		r := e.run(t, "--json", "--agent", "codex", "--fields", "surface_ref,state,pid")
+		if r.code != 0 || r.stderr != "" {
+			t.Fatalf("code=%d stderr=%q", r.code, r.stderr)
+		}
+		var rows []map[string]any
+		if err := json.Unmarshal([]byte(r.stdout), &rows); err != nil {
+			t.Fatal(err)
+		}
+		if len(rows) != 1 || rows[0]["surface_ref"] != "surface:12" || rows[0]["state"] != "unknown" || rows[0]["pid"] != float64(5012) {
+			t.Fatalf("session id did not match Codex process with unknown tty: %#v", rows)
+		}
+	})
+
 	t.Run("failure keeps Codex state unknown", func(t *testing.T) {
 		e := defaultEnv()
 		e.psFails = true

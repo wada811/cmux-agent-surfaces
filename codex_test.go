@@ -39,6 +39,17 @@ broken row
 	}
 }
 
+func TestParseCodexProcessesLongUnrelatedLine(t *testing.T) {
+	longArg := strings.Repeat("x", 70_000)
+	out := []byte("200 1 ?? unrelated " + longArg + "\n" +
+		"201 1 ?? /Users/me/.npm/bin/codex resume 00000000-0000-4000-8000-000000000012 --no-daemon\n")
+
+	got := parseCodexProcesses(out)
+	if len(got) != 1 || got[0].pid != 201 || got[0].sid != "00000000-0000-4000-8000-000000000012" {
+		t.Fatalf("long unrelated line hid the Codex process: %+v", got)
+	}
+}
+
 func TestCodexSessionID(t *testing.T) {
 	const id = "01a1a452-9753-7781-a14f-c6c6a257b19b"
 	for _, c := range []struct{ command, want string }{

@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bufio"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,9 +38,8 @@ var resumeID = regexp.MustCompile(`(^|\s)resume\s+([0-9a-fA-F]{8}-[0-9a-fA-F]{4}
 
 func parseCodexProcesses(out []byte) []codexProc {
 	var procs []codexProc
-	scanner := bufio.NewScanner(strings.NewReader(string(out)))
-	for scanner.Scan() {
-		m := psLine.FindStringSubmatch(scanner.Text())
+	for _, line := range strings.Split(string(out), "\n") {
+		m := psLine.FindStringSubmatch(line)
 		if m == nil || !isCodexTUI(m[4]) {
 			continue
 		}
