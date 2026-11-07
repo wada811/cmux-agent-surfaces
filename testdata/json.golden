@@ -10,6 +10,7 @@
   "updated": 1791633570,
   "age": 30,
   "cwd": "/Users/me/work/importer",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000001",
   "pid": 4001,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work/00000000-0000-4000-8000-000000000001.jsonl"
@@ -47,6 +48,7 @@
   "updated": 1791622800,
   "age": 10800,
   "cwd": "/Users/me/work/notes",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000002",
   "pid": 4002,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work/00000000-0000-4000-8000-000000000002.jsonl"
@@ -64,6 +66,7 @@
   "updated": 1791628200,
   "age": 5400,
   "cwd": "/Users/me/work/scratch",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000003",
   "pid": 4003,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work/00000000-0000-4000-8000-000000000003.jsonl"
@@ -83,6 +86,7 @@
   "updated": 1791617460,
   "age": 16140,
   "cwd": "/Users/me/work/migrate",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000004",
   "pid": 4004,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work/00000000-0000-4000-8000-000000000004.jsonl"
@@ -98,6 +102,7 @@
   "updated": 1791633300,
   "age": 300,
   "cwd": "/Users/me/work/docs",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000005",
   "pid": 4005,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work/00000000-0000-4000-8000-000000000005.jsonl"
@@ -113,6 +118,7 @@
   "updated": 1791547200,
   "age": 86400,
   "cwd": "/Users/me/work/restore-6",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000006",
   "pid": 4006,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work/00000000-0000-4000-8000-000000000006.jsonl"
@@ -128,6 +134,7 @@
   "updated": 1791540000,
   "age": 93600,
   "cwd": "/Users/me/work/restore-7",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000007",
   "pid": null,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work/00000000-0000-4000-8000-000000000007.jsonl"
@@ -143,6 +150,7 @@
   "updated": 1791460800,
   "age": 172800,
   "cwd": "/Users/me/work/beta",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000010",
   "pid": 4010,
   "transcript_path": "testdata/home/.claude/projects/-Users-me-work-beta/00000000-0000-4000-8000-000000000010.jsonl"
@@ -158,6 +166,7 @@
   "updated": null,
   "age": null,
   "cwd": "/Users/me/work/restore-11",
+  "agent": "claude",
   "session_id": "00000000-0000-4000-8000-000000000011",
   "pid": null,
   "transcript_path": null

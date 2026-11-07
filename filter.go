@@ -52,7 +52,7 @@ func excludeSurface(rows []*Row, ref string) []*Row {
 	return out
 }
 
-var validStates = []State{StateBusy, StateWaiting, StateIdle, StateShell, StateStopped}
+var validStates = []State{StateBusy, StateWaiting, StateIdle, StateShell, StateStopped, StateUnknown}
 
 // stateNames lists the values --state accepts.
 func stateNames() []string {
@@ -61,6 +61,42 @@ func stateNames() []string {
 		names[i] = string(s)
 	}
 	return names
+}
+
+// agentNames lists the values --agent accepts.
+func agentNames() []string {
+	names := make([]string, len(validAgents))
+	for i, a := range validAgents {
+		names[i] = string(a)
+	}
+	return names
+}
+
+// parseAgents parses --agent: a comma-separated list of known agents.
+func parseAgents(s string) (map[Agent]bool, error) {
+	set := map[Agent]bool{}
+	for _, v := range strings.Split(s, ",") {
+		a := Agent(strings.TrimSpace(v))
+		if !slices.Contains(validAgents, a) {
+			return nil, fmt.Errorf("invalid --agent value %q (use a comma-separated list of claude, codex)", a)
+		}
+		set[a] = true
+	}
+	return set, nil
+}
+
+// filterAgents keeps rows whose agent is in agents (nil means any).
+func filterAgents(rows []*Row, agents map[Agent]bool) []*Row {
+	if agents == nil {
+		return rows
+	}
+	out := []*Row{}
+	for _, r := range rows {
+		if agents[r.Agent] {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // parseStates parses --state: a comma-separated list of known states.
@@ -113,7 +149,7 @@ func filterRows(rows []*Row, states map[State]bool, olderThan *time.Duration, no
 	return out
 }
 
-var stateRank = map[State]int{StateWaiting: 0, StateIdle: 1, StateShell: 2, StateBusy: 3, StateStopped: 4}
+var stateRank = map[State]int{StateWaiting: 0, StateIdle: 1, StateShell: 2, StateBusy: 3, StateUnknown: 4, StateStopped: 5}
 
 // sortRows reorders rows in place. "tree" keeps the given order. Ties keep
 // the tree order (stable sort).

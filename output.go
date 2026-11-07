@@ -256,6 +256,8 @@ var fields = []field{
 		}},
 	{"cwd", 28, false, func(r *Row, _ time.Time) string { return strings.ReplaceAll(deref(r.Cwd), home, "~") },
 		func(r *Row, _ time.Time) any { return str(r.Cwd) }},
+	{"agent", 6, true, func(r *Row, _ time.Time) string { return string(r.Agent) },
+		func(r *Row, _ time.Time) any { return r.Agent }},
 	{"session_id", 36, true, func(r *Row, _ time.Time) string { return r.SessionID },
 		func(r *Row, _ time.Time) any { return r.SessionID }},
 	{"pid", 7, true, func(r *Row, _ time.Time) string {
@@ -275,7 +277,7 @@ var fields = []field{
 
 // tableFields are the columns of the table when --fields is not given.
 // JSON gets every field.
-var tableFields = []string{"workspace_ref", "workspace_title", "surface_ref", "surface_title", "cwd", "state", "age"}
+var tableFields = []string{"workspace_ref", "workspace_title", "surface_ref", "surface_title", "cwd", "agent", "state", "age"}
 
 func fieldNames() []string {
 	names := make([]string, len(fields))

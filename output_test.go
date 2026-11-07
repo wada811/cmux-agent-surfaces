@@ -108,14 +108,14 @@ func TestJSONKeys(t *testing.T) {
 	s := "x"
 	var out bytes.Buffer
 	emit(&out, []*Row{{WindowRef: &s, WorkspaceRef: &s, WorkspaceTitle: &s, SurfaceRef: &s, SurfaceTitle: &s,
-		State: "idle", Cwd: &s, SessionID: "id", TranscriptPath: &s}}, true, fields)
+		State: "idle", Cwd: &s, Agent: AgentClaude, SessionID: "id", TranscriptPath: &s}}, true, fields)
 	var got []json.RawMessage
 	if err := json.Unmarshal(out.Bytes(), &got); err != nil || len(got) != 1 {
 		t.Fatalf("bad json: %v %q", err, out.String())
 	}
 	// Keys must appear in this order.
 	want := []string{"window_ref", "workspace_ref", "workspace_title", "surface_ref", "surface_title", "state",
-		"waiting_for", "updated", "age", "cwd", "session_id", "pid", "transcript_path"}
+		"waiting_for", "updated", "age", "cwd", "agent", "session_id", "pid", "transcript_path"}
 	pos := -1
 	for _, k := range want {
 		i := strings.Index(out.String(), `"`+k+`":`)

@@ -15,6 +15,7 @@ var completionShells = []string{"zsh"}
 // as the hint and the zsh action that completes it ("" for a free-form value).
 // Value lists come from the same definitions the flags are validated against.
 var flagArgs = map[string]struct{ hint, action string }{
+	"agent":      {"agent", commaList("agent", agentNames())},
 	"state":      {"state", commaList("state", stateNames())},
 	"fields":     {"field", commaList("field", fieldNames())},
 	"sort":       {"order", "(" + strings.Join(sortOrders, " ") + ")"},

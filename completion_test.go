@@ -25,6 +25,7 @@ func TestCompletionValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
+		"--agent=[", strings.Join(agentNames(), " "),
 		"--state=[", strings.Join(stateNames(), " "),
 		"--fields=[", strings.Join(fieldNames(), " "),
 		"--sort=[", "(" + strings.Join(sortOrders, " ") + ")",

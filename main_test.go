@@ -35,6 +35,7 @@ func TestRunUsageErrors(t *testing.T) {
 		{"--state", "foo"},
 		{"--state", ""},
 		{"--state", "waiting,foo"},
+		{"--agent", "nope"},
 		{"--older-than", "abc"},
 		{"--older-than", "-1d"},
 		{"--workspace", ""},

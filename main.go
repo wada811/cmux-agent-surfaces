@@ -42,6 +42,7 @@ type options struct {
 	json        bool
 	version     bool
 	state       string
+	agent       string
 	olderThan   string
 	workspace   string
 	excludeSelf bool
@@ -59,6 +60,7 @@ func newFlagSet() (*flag.FlagSet, *options) {
 	fs.BoolVar(&o.json, "json", false, "print the list as JSON")
 	fs.BoolVar(&o.version, "version", false, "print the version and exit")
 	fs.StringVar(&o.state, "state", "", "keep only these states (comma-separated)")
+	fs.StringVar(&o.agent, "agent", "", "keep only these agents (comma-separated)")
 	fs.StringVar(&o.olderThan, "older-than", "", "keep only tabs whose last message is older than this")
 	fs.StringVar(&o.workspace, "workspace", "", "keep only this workspace (ref, UUID or index)")
 	fs.BoolVar(&o.excludeSelf, "exclude-self", false, "leave out the tab this command runs in")
@@ -104,10 +106,17 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	var states map[State]bool
+	var agents map[Agent]bool
 	var olderThan *time.Duration
 	if set["state"] {
 		var err error
 		if states, err = parseStates(o.state); err != nil {
+			return usageError(stderr, err.Error())
+		}
+	}
+	if set["agent"] {
+		var err error
+		if agents, err = parseAgents(o.agent); err != nil {
 			return usageError(stderr, err.Error())
 		}
 	}
@@ -184,7 +193,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	rows := []*Row{}
 	for i, s := range surfaces {
 		if recs[i] != nil {
-			describe(s, recs[i], live)
+			describeClaude(s, recs[i], live)
 			rows = append(rows, s)
 		}
 	}
@@ -194,6 +203,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if o.excludeSelf {
 		rows = excludeSurface(rows, selfSurface(os.Getenv("CMUX_SURFACE_ID"), caller))
 	}
+	rows = filterAgents(rows, agents)
 	rows = filterRows(rows, states, olderThan, now())
 	sortRows(rows, o.sort)
 	return emit(stdout, rows, o.json, cols)

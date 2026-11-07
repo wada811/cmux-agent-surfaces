@@ -138,7 +138,8 @@ func lastTimestamp(path string) int64 {
 	return 0
 }
 
-func describe(row *Row, rec *restoreRecord, live map[string]*sessionMeta) {
+func describeClaude(row *Row, rec *restoreRecord, live map[string]*sessionMeta) {
+	row.Agent = AgentClaude
 	sid := rec.CheckpointID
 	m := live[sid]
 	var jsonl *string

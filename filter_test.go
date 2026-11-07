@@ -42,7 +42,7 @@ func TestParseStates(t *testing.T) {
 		{"waiting", 1, false},
 		{"waiting,idle", 2, false},
 		{"waiting, idle", 2, false},
-		{"busy,waiting,idle,shell,stopped", 5, false},
+		{"busy,waiting,idle,shell,stopped,unknown", 6, false},
 		{"foo", 0, true},
 		{"waiting,foo", 0, true},
 		{"", 0, true},
@@ -52,6 +52,43 @@ func TestParseStates(t *testing.T) {
 		got, err := parseStates(c.in)
 		if (err != nil) != c.wantErr || len(got) != c.want {
 			t.Errorf("parseStates(%q) = %v, %v", c.in, got, err)
+		}
+	}
+}
+
+func TestParseAgents(t *testing.T) {
+	for _, c := range []struct {
+		in      string
+		want    int
+		wantErr bool
+	}{
+		{"claude", 1, false},
+		{"claude,codex", 2, false},
+		{"codex, claude", 2, false},
+		{"Codex", 0, true},
+		{"", 0, true},
+		{"claude,", 0, true},
+	} {
+		got, err := parseAgents(c.in)
+		if (err != nil) != c.wantErr || len(got) != c.want {
+			t.Errorf("parseAgents(%q) = %v, %v", c.in, got, err)
+		}
+	}
+}
+
+func TestFilterAgents(t *testing.T) {
+	a, b := "a", "b"
+	rows := []*Row{{SurfaceRef: &a, Agent: AgentClaude}, {SurfaceRef: &b, Agent: AgentCodex}}
+	for _, c := range []struct {
+		agents map[Agent]bool
+		want   string
+	}{
+		{nil, "a,b"},
+		{map[Agent]bool{AgentClaude: true}, "a"},
+		{map[Agent]bool{AgentCodex: true}, "b"},
+	} {
+		if got := surfaces(filterAgents(rows, c.agents)); got != c.want {
+			t.Errorf("filterAgents = %q, want %q", got, c.want)
 		}
 	}
 }
@@ -115,4 +152,11 @@ func TestSortRows(t *testing.T) {
 			t.Errorf("sort %s: got %q, want %q", c.order, got, c.want)
 		}
 	}
+	rows := []*Row{{SurfaceRef: ptr("busy"), State: StateBusy}, {SurfaceRef: ptr("unknown"), State: StateUnknown}, {SurfaceRef: ptr("stopped"), State: StateStopped}}
+	sortRows(rows, "state")
+	if got := surfaces(rows); got != "busy,unknown,stopped" {
+		t.Errorf("unknown state rank: got %q", got)
+	}
 }
+
+func ptr(s string) *string { return &s }
